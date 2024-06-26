@@ -140,7 +140,7 @@ lines(seq(.9,1.1,by=0.01),
 
 
 ### Power calculation
-sds <- seq(100, 300, by = 1)
+sds <- seq(10, 300, by = 1)
 lower <- power.t.test(
   delta = 15 - 5,
   sd = sds, n = 10,
@@ -164,58 +164,51 @@ plot(sds, meanval,
   xlab = "standard deviation",
   ylab = "power",
   yaxs = "i",
-  ylim = c(0.05, 0.12)
+  ylim = c(0.05, 0.8)
 )
 lines(sds, lower, lty = 2)
 lines(sds, upper, lty = 2)
-text(125, 0.053, "10")
-text(150, 0.054, "15")
-text(175, 0.056, "20")
+text(40, 0.07, "10")
+text(50, 0.09, "15")
+text(60, 0.11, "20")
 
+library(furrr)
 compute_power <- function(nsim = 100000, n = 10,
                           effect = NULL,
                           stddev = NULL) {
   crit_t <- abs(qt(0.025, df = n - 1))
-  temp_power <- rep(NA, nsim)
-  for (i in 1:nsim) {
-    y <- rnorm(n, mean = effect, sd = stddev)
-    temp_power[i] <- ifelse(abs(t.test(y)$statistic)
-    > crit_t, 1, 0)
-  }
+  temp_power <- future_map_dbl(rep(0, nsim), function(i) {
+                                 y <- rnorm(n, mean = effect, sd = stddev)
+                                 ifelse(abs(t.test(y)$statistic) > crit_t, 1, 0)
+                          },
+                          .options = furrr_options(seed = TRUE)
+  )
   ## return power calculation:
   mean(temp_power)
 }
 
-sds <- seq(100, 300, by = 2)
+
+sds <- seq(10, 300, by = 5)
 nsim <- 100000
 n <- 10
-power_meanval <- power_lowerval <- power_upperval <- rep(NA, length(sds))
-for (s in 1:length(sds)) {
-  power_meanval[s] <- compute_power(
-    nsim = nsim, n = n,
-    effect = 15,
-    stddev = sds[s]
-  )
+power_meanval <- future_map_dbl(sds,
+                                ~compute_power(nsim = nsim, n = n,
+                                               effect = 15, .))
+power_lowerval <- future_map_dbl(sds,
+                                ~compute_power(nsim = nsim, n = n,
+                                               effect = 10, .))
 
-  power_lowerval[s] <- compute_power(
-    nsim = nsim, n = n,
-    effect = 10,
-    stddev = sds[s]
-  )
-
-  power_upperval[s] <- compute_power(
-    nsim = nsim, n = n,
-    effect = 20,
-    stddev = sds[s]
-  )
-}
-plot(sds, lowess(power_upperval)$y,
+power_upperval <- future_map_dbl(sds,
+                                ~compute_power(nsim = nsim, n = n,
+                                               effect = 20, .))
+plot(sds, power_upperval,
   type = "l", lty = 2,
   xlab = "standard deviation",
   ylab = "power",
-  main = "Power curve (n=10) \n using simulation",
-  ylim = c(0.05, 0.12),
+  main = "Power curve (n=30) \n using simulation",
+  ylim = c(0.05, 0.8),
   yaxs = "i"
 )
-lines(sds, lowess(power_lowerval)$y, lty = 2)
-lines(sds, lowess(power_meanval)$y)
+lines(sds, power_lowerval, lty = 2)
+lines(sds, power_meanval)
+
