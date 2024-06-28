@@ -1,6 +1,6 @@
 # parallelization is needed for simulations
+# main message : don't use foreach whatsoever! it's unbearibly slow.
 library(future)
-library(doFuture)
 plan(multisession)
 
 tic <- function() {
@@ -14,40 +14,41 @@ toc <- function() {
 }
 
 
-slow_sum <- function(x) {
-  sum <- 0
-  for (value in x) {
-    Sys.sleep(1.0)
-    sum <- sum + value
-  }
-  sum
+summary_ttest <- function(res, paired = TRUE, units = "ms") {
+  obs_t <- round(res$statistic, 2)
+  dfs <- round(res$parameter)
+  pval <- round(res$p.value, 3)
+  ci <- round(res$conf.int, 2)
+  est <- round(res$estimate, 2)
+
+  res <- list(obs_t = obs_t, dfs = dfs,
+              pval = pval, ci = ci,
+              est = est, units = units,
+              paired = paired
+  )
+  print_ttest(res)
 }
 
-
-tic()
-fa %<-% slow_sum(1:5)
-toc()
-fb %<-% slow_sum(6:10)
-toc()
-y <- fa + fb
-toc()
-y
-toc()
-
-# create tasks with foreach par loop
-tic()
-xs <- list(1:5, 6:10, 11:15, 16:20)
-ys <- list()
-ys <- foreach(ii = seq_along(xs)) %dofuture% {
-  message(paste0("Iteration ", ii))
-  slow_sum(xs[[ii]])
+print_ttest <- function(res) {
+  cat(paste(
+              paste("t(", res$dfs, ") = ", res$obs_t, sep = ""),
+              paste("p = ", res$pval, sep = ""), "\n"))
+  if (res$paired == TRUE)
+    print_ci_paired(res$est, res$ci, res$units)
+  else
+    print_ci(res$est, res$ci, res$units)
 }
-message("Done")
-print(ys)
 
-ys <- unlist(ys)
-ys
+print_ci_paired <- function(est, ci, units) {
+  cat(paste("est. : ", est,
+              " [", ci[1], ", ", ci[2], "] ",
+              units, sep = ""))
+}
 
-y <- sum(ys)
-y
-toc()
+print_ci <- function(est, ci, units) {
+  cat(paste(
+              paste("est. 1:", est[1], units),
+              paste("est. 2:", est[2], units),
+              paste("CI of diff. in means: [", ci[1], ", ", ci[2], "] ",
+              units, sep = ""), sep = "\n"))
+}

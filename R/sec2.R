@@ -1,3 +1,6 @@
+library(furrr)
+library(magrittr)
+
 condition <- c(rep(letters[1:2], 2), rep(letters[2:1], 2))
 item <- rep(1:4, 2)
 subj <- rep(1:2, each = 4)
@@ -212,3 +215,91 @@ plot(sds, power_upperval,
 lines(sds, power_lowerval, lty = 2)
 lines(sds, power_meanval)
 
+
+### Type S and M error
+## probable effect size, derived from past studies:
+D <- 15
+## SE from the study of interest
+se <- 46
+N <- 37
+sd <- se * sqrt(N)
+nsim <- 10000
+drep <- future_map_dbl(rep(0, nsim),
+                       function(x) {
+                         samp <- rnorm(N, mean = D, sd = sd)
+                         mean(samp)
+                       },
+                       .options = furrr_options(seed = TRUE)
+)
+
+pow <- mean(ifelse(abs(drep / se) > 2, 1, 0))
+
+signif <- which(abs(drep / se) > 2)
+
+## type S error rate / signif:
+types_sig <- mean(drep[signif] < 0)
+
+## type M error rate / signif
+typem_sig <- mean(abs(drep[signif]) / D)
+
+
+## funnel plot
+truemu <- 15
+
+sampsize <- seq(10, 10000, by = 10)
+elem <- future_map(sampsize, function(n) {
+    y <- rnorm(n, mean = truemu, sd = 250)
+    sig <- ifelse(t.test(y)$p.value < 0.05, 1, 0)
+    means <- mean(y)
+    power <- power.t.test(d = truemu, sd = 250, n = n)$power
+    data.frame(sig, means, power)
+}, .options = furrr_options(seed = TRUE)) %>% list_rbind()
+
+
+plot(jitter(elem$means), jitter(elem$power),
+     main = "Funnel plot",
+     xlim = range(c(min(elem$means), max(elem$means))),
+     xlab = "effect", ylab = "power",
+     cex.lab = 1.8, cex.axis = 1.5, cex.main = 1.5
+)
+abline(v = 15)
+elem_sig <- elem %>% dplyr::filter(sig == 1)
+points(elem_sig$means, elem_sig$power, pch = 21, bg = "#CACACA")
+
+# searching for significane
+n <- 15
+nsim <- 10000
+stddev <- 250
+mn <- 0
+res <- future_map(1:nsim, function(i) {
+    samp <- rnorm(n, mean = mn, sd = stddev)
+    test <- t.test(samp)
+    pvals <- test$p.value
+    t_stat <- test$statistic
+    data.frame(pvals, t_stat)
+}, .options = furrr_options(seed = TRUE)) %>% list_rbind()
+
+mean(res$pvals < 0.05) %>% round(2)
+
+
+## how many subjects can I run?
+upper_bound <- 6 * n
+res_inc <- future_map(1:nsim, function(i) {
+    sig <- FALSE
+    x <- rnorm(n, mean = mn, sd = stddev)
+    while (!sig && length(x) < upper_bound) {
+      if (t.test(x)$p.value > 0.05)
+        x <- append(x, rnorm(n, mean = mn, sd = stddev))
+      else
+        sig <- TRUE
+    }
+    test <- t.test(x)
+    pvals <- test$p.value
+    t_stat <- test$statistic
+    data.frame(pvals, t_stat)
+}, .options = furrr_options(seed = TRUE)) %>% list_rbind()
+
+mean(res_inc$pvals < 0.05) %>% round(2)
+
+plot(density(res$t_stat), main = "", xlab = "t-value")
+lines(density(res_inc$t_stat), lty = 2)
