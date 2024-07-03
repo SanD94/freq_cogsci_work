@@ -21,34 +21,43 @@ summary_ttest <- function(res, paired = TRUE, units = "ms") {
   ci <- round(res$conf.int, 2)
   est <- round(res$estimate, 2)
 
-  res <- list(obs_t = obs_t, dfs = dfs,
-              pval = pval, ci = ci,
-              est = est, units = units,
-              paired = paired
+  res <- list(
+    obs_t = obs_t, dfs = dfs,
+    pval = pval, ci = ci,
+    est = est, units = units,
+    paired = paired
   )
   print_ttest(res)
 }
 
 print_ttest <- function(res) {
   cat(paste(
-              paste("t(", res$dfs, ") = ", res$obs_t, sep = ""),
-              paste("p = ", res$pval, sep = ""), "\n"))
-  if (res$paired == TRUE)
+    paste("t(", res$dfs, ") = ", res$obs_t, sep = ""),
+    paste("p = ", res$pval, sep = ""), "\n"
+  ))
+  if (res$paired == TRUE) {
     print_ci_paired(res$est, res$ci, res$units)
-  else
+  } else {
     print_ci(res$est, res$ci, res$units)
+  }
 }
 
 print_ci_paired <- function(est, ci, units) {
   cat(paste("est. : ", est,
-              " [", ci[1], ", ", ci[2], "] ",
-              units, sep = ""))
+    " [", ci[1], ", ", ci[2], "] ",
+    units,
+    sep = ""
+  ))
 }
 
 print_ci <- function(est, ci, units) {
   cat(paste(
-              paste("est. 1:", est[1], units),
-              paste("est. 2:", est[2], units),
-              paste("CI of diff. in means: [", ci[1], ", ", ci[2], "] ",
-              units, sep = ""), sep = "\n"))
+    paste("est. 1:", est[1], units),
+    paste("est. 2:", est[2], units),
+    paste("CI of diff. in means: [", ci[1], ", ", ci[2], "] ",
+      units,
+      sep = ""
+    ),
+    sep = "\n"
+  ))
 }

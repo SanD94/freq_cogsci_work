@@ -303,3 +303,4 @@ mean(res_inc$pvals < 0.05) %>% round(2)
 
 plot(density(res$t_stat), main = "", xlab = "t-value")
 lines(density(res_inc$t_stat), lty = 2)
+
