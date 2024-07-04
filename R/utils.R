@@ -61,3 +61,11 @@ print_ci <- function(est, ci, units) {
     sep = "\n"
   ))
 }
+
+get_cond <- function(groups, id_names, id) {
+  index <- id_names %>%
+    future_map(~ id %in% .x %>% all()) %>%
+    unlist() %>%
+    which()
+  groups[[index]]
+}
