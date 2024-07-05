@@ -48,6 +48,7 @@ print_ci_paired <- function(est, ci, units) {
     units,
     sep = ""
   ))
+  cat("\n")
 }
 
 print_ci <- function(est, ci, units) {
@@ -60,12 +61,6 @@ print_ci <- function(est, ci, units) {
     ),
     sep = "\n"
   ))
+  cat("\n")
 }
 
-get_cond <- function(groups, id_names, id) {
-  index <- id_names %>%
-    future_map(~ id %in% .x %>% all()) %>%
-    unlist() %>%
-    which()
-  groups[[index]]
-}
