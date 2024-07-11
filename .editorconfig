@@ -2,3 +2,8 @@
 [*.R]
 indent_style = space
 indent_size = 2
+
+# 4 space indentation
+[*.cpp]
+indent_style = space
+indent_size = 4
