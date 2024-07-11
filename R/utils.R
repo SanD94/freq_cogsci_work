@@ -64,3 +64,18 @@ print_ci <- function(est, ci, units) {
   cat("\n")
 }
 
+gg_xyplot <- function(x, y, formula, shape, size, data) {
+  data %>% ggplot(aes(
+    x = {{ x }},
+    y = {{ y }}
+  )) +
+    facet_wrap(formula) +
+    geom_smooth(method = "lm") +
+    geom_point(color = "blue", shape = shape, size = size) +
+    theme(panel.grid.minor = element_blank()) +
+    theme_bw() +
+    #     scale_x_discrete(breaks=c("-1","0.5","0","0.5","1"),labels=c("OR","", "", "", "SR"))+
+    scale_x_continuous(breaks = round(seq(-1, 1, by = 2), 1)) +
+    ylab(quo({{ y }})) +
+    xlab("condition (-1: SR, +1: OR)")
+}
