@@ -27,6 +27,33 @@ summary(m)
 
 vif(m)
 
+## design matrix
+X <- model.matrix(m0)
+head(X, n = 4)
+
+inv_xtx <- solve(t(X) %*% X)
+beta_hat <- inv_xtx %*% t(X) %*% y
+sigma_hat <- summary(m0)$sigma
+var_hat <- sigma_hat^2 * inv_xtx
+rho_hat <- var_hat[1, 2] / (sqrt(var_hat[1, 1]) * sqrt(var_hat[2, 2]))
+
+x_c <- scale(x, scale = FALSE)
+m <- lm(y ~ x_c)
+## design matrix
+X <- model.matrix(m)
+
+inv_xtx <- solve(t(X) %*% X)
+beta_hat <- inv_xtx %*% t(X) %*% y
+sigma_hat <- summary(m)$sigma
+var_hat <- sigma_hat^2 * inv_xtx
+rho_hat <- var_hat[1, 2] / (sqrt(var_hat[1, 1]) * sqrt(var_hat[2, 2]))
+rho_hat %>% round()
+
+## hypothesis testing with ANOVA
+m1 <- lm(y ~ x_c)
+m0 <- lm(y ~ 1)
+anova(m0, m1)
+
 # vif of greater than 5 is a cause for worry.
 ### Checking model assumptions
 qqPlot(residuals(m))
