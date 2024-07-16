@@ -7,6 +7,7 @@ library(lme4)
 library(rstatix)
 library(lattice)
 library(languageR)
+library(car)
 
 showtext_auto()
 font_add_google("Lato", "lato")
