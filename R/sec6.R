@@ -51,3 +51,29 @@ round(summary(fit_mSum)$coefficients, 3)
 ## Hypothesis Matrix
 data("df_contrasts2")
 head(df_contrasts2)
+
+## Defining a custom contrast matrix involves four steps:
+
+### Write down the estimated comparisons or hypotheses
+### Extract the weights and write them into what we will call a hypothesis matrix
+### Apply the generalized matrix inverse to the hypothesis matrix to create the contrast matrix
+### Assign the contrast matrix to the factor and run the linear (mixed) model
+
+
+hc_sum <- rbind(
+  cH00 = c(adjectives = 1 / 3, nouns = 1 / 3, verbs = 1 / 3),
+  cH01 = c(adjectives = +2 / 3, nouns = -1 / 3, verbs = -1 / 3),
+  cH02 = c(adjecctives = -1 / 3, nouns = +2 / 3, verbs = -1 / 3)
+)
+fractions(t(hc_sum))
+
+# define a function to make the output nicer
+ginv2 <- function(x) {
+  fractions(provideDimnames(ginv(x),
+    base = dimnames(x)[2:1]
+  ))
+}
+
+xc_sum <- ginv2(hc_sum)
+
+fractions(cbind(1, contr.sum(3)))
